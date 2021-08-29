@@ -242,11 +242,11 @@ The following features may be supported in the future:
     - [ ] Add thorough testing
     - [ ] Create a ReadTheDocs/Doxygen or whatever
     - [ ] Change Objects to DataClasses as per in this [SO question](https://stackoverflow.com/questions/35988/c-like-structures-in-python).
-    - [ ] Make this a proper module as per in this [SO question](https://stackoverflow.com/questions/42773907/what-is-the-python-equivalent-to-the-c-namespace/64141888).
 - [Wikipedia](https://www.wikipedia.org/)
     - [ ] Select Language of operation for Wikipedia
     - [ ] Get all cited sentences and their correct citation
     - [ ] Allow for batch operations
     - [ ] POST requests
+    - [ ] Get requirements.txt file
 - [Omniglot](https://omniglot.com/)
 - [Wolfram](https://www.wolframalpha.com/)

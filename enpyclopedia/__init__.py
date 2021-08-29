@@ -2,15 +2,16 @@
 A python interface to retrieve information from online encyclopedias. 
 The following Encyclopedias are covered:
 - Wikipedia
-- Omniglot
 The following Encyclopedias may be covered in the future:
+- Omniglot
 - Wolfram
 """
 import logging
 import requests
 from bs4 import BeautifulSoup
-from tqdm import tqdm
 from wget import download
+from tqdm import tqdm # This is for visual confirmation of the downloading of images
+from dataclasses import dataclass
 import os
 import urllib.parse
 
@@ -42,13 +43,13 @@ class WikipediaSection:
         query_params = {
                 "action": "parse",
                 "format": "json",
-                "page": f"{self.fromtitle}",
-                "prop": f"{type}",
+                "page": self.fromtitle,
+                "prop": type,
                 "section": f"{self.index}"
             }
 
         req = requests.Session().get(url=WIKI_API_URL, params=query_params)
-        return req.json()["parse"][f"{type}"]["*"]
+        return req.json()["parse"][type]["*"]
 
 # @info I considered adding a new member called "Type" that reflects the type of the WikipediaPage:
 # For example, "Category", "Redirect", "Normal"
@@ -97,11 +98,10 @@ class WikipediaPage:
         @return String
         """
         summary = ""
-        title = self.args["title"]
         query_params = {
                 "action": "query",
                 "format": "json",
-                "titles": f"{title}",
+                "titles": self.args["title"],
                 "prop": "extracts",
                 "exintro": None,
                 "explaintext": None
@@ -120,11 +120,10 @@ class WikipediaPage:
         Returns the links for the current page in all other available languages.
         @return List of strings
         """
-        title = self.args["title"]
         query_params = {
                 "action": "query",
                 "format": "json",
-                "titles": f"{title}",
+                "titles": self.args["title"],
                 "prop": "langlinks"
             }
 
@@ -148,17 +147,16 @@ class WikipediaPage:
         """
         if type != "text" and type != "wikitext":
             return ""
-        title = self.args["title"]
         query_params = {
                 "action": "parse",
                 "format": "json",
-                "page": f"{title}",
-                "prop": f"{type}"
+                "page": self.args["title"],
+                "prop": type
             }
 
         req = requests.Session().get(url=WIKI_API_URL, params=query_params)
         LOGGER.info("Request URL: %s", req.url)
-        return req.json()["parse"][f"{type}"]["*"]
+        return req.json()["parse"][type]["*"]
 
     def get_sections(self) -> list:
         """
@@ -170,11 +168,10 @@ class WikipediaPage:
             LOGGER.warning("This WikipediaPage has already retrieved all of its sections at a previous time. Returning previously found sections to avoid unnecessary requests. ")
             return self.sections
         
-        title = self.args["title"]
         query_params = {
                 "action": "parse",
                 "format": "json",
-                "page": f"{title}",
+                "page": self.args["title"],
                 "prop": "sections"
             }
 
@@ -195,11 +192,10 @@ class WikipediaPage:
             LOGGER.warning("This WikipediaPage has already retrieved all of its categories at a previous time. Returning previously found categories to avoid unnecessary requests")
             return self.categories
         
-        title = self.args["title"]
         query_params = {
                 "action": "query",
                 "format": "json",
-                "titles": f"{title}",
+                "titles": self.args["title"],
                 "prop": "categories"
             }
 
@@ -226,12 +222,11 @@ class WikipediaPage:
         if self.args["title"].split(":")[0] != "Category":
             LOGGER.error("The current page (%s) is not a category.", self.args["title"])
             return [] # Not a category
-        title = self.args["title"]
         query_params = {
                 "action": "query",
                 "format": "json",
                 "list": "categorymembers",
-                "cmtitle": f"{title}", # May have to do urllib quote()
+                "cmtitle": self.args["title"], # May have to do urllib quote()
                 "cmlimit": f"{cmlimit}"
             }
 
@@ -265,12 +260,11 @@ class WikipediaPage:
         https://www.mediawiki.org/wiki/API:Allpages
         @return a list of WikipediaPage objects of cmlimit length.
         """
-        title = self.args["title"]
         query_params = {
                 "action": "query",
                 "format": "json",
                 "list": "allpages",
-                "apfrom": f"{title}",
+                "apfrom": self.args["title"],
                 "aplimit": f"{aplimit}"
             }
         
@@ -306,7 +300,7 @@ class WikipediaPage:
         allpages = [ WikipediaPage(p) for p in req.json()["query"]["allpages"] ]
         return allpages
         
-    def get_all_imgs(self, directory="imgs\\") -> tuple(int, int):
+    def get_all_imgs(self, directory="imgs\\"): # -> Tuple[int, int]:
         """
         Downloads using wget's package all images found in a webpage to the specified directory.
         @returns integer tuple that contains the amount of images downloaded and the total amount of images encountered. 
@@ -371,7 +365,6 @@ class Enpyclopedia:
         if self.encyclopedia == "WIKIPEDIA" or self.encyclopedia == "ALL":
             S = requests.Session()
             title = to_find
-
             # @info Basic Link checking, the more robust option would involve regex but
             # for our purposes I think that would be overkill.
             if "https://" in to_find or "http://" in to_find:
@@ -379,11 +372,10 @@ class Enpyclopedia:
                 # This is essentially the last part of the url string
                 title = to_find.split('/')
                 title = title[len(title) - 1]
-
             query_params = {
                 "action": "query",
                 "format": "json",
-                "titles": f"{title}",
+                "titles": title,
                 "prop": "info|redirects",
                 "inprop": "url|talkid"
             }
