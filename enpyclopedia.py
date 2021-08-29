@@ -12,9 +12,6 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 from wget import download
 import os
-# import re
-# @debug
-import json # For requests and pretty printing
 import urllib.parse
 
 LOGGER = logging.getLogger(__name__)
@@ -53,6 +50,12 @@ class WikipediaSection:
         req = requests.Session().get(url=WIKI_API_URL, params=query_params)
         return req.json()["parse"][f"{type}"]["*"]
 
+# @info I considered adding a new member called "Type" that reflects the type of the WikipediaPage:
+# For example, "Category", "Redirect", "Normal"
+# But I've reached the conclusion that it would be terrible: as of rn, the only way a WikipediaPage 
+# can be one of those things is if being accessed through another WikipediaPage's arguments, which
+# implies that you must know what you are accessing. It is important to know what type of data you
+# are accessing, even more so in dynamic languages like Python, so doing this would be a bad idea.
 class WikipediaPage:
 
     # https://www.mediawiki.org/wiki/API:Info
@@ -158,6 +161,10 @@ class WikipediaPage:
         return req.json()["parse"][f"{type}"]["*"]
 
     def get_sections(self) -> list:
+        """
+        Retrieves all the sections of the current page. If the sections were already previously found, it returns the previous ones.
+        @return a list of WikipediaSection containing all the sections. 
+        """
         # https://www.mediawiki.org/w/api.php?action=parse&page=API:Parsing_wikitext&prop=sections
         if self.sections:
             LOGGER.warning("This WikipediaPage has already retrieved all of its sections at a previous time. Returning previously found sections to avoid unnecessary requests. ")
@@ -180,6 +187,10 @@ class WikipediaPage:
         return self.sections
 
     def get_categories(self) -> list:
+        """
+        Retrieves all the categories of the current page. If the categories were already previously found, it returns the previous ones.
+        @return a list of WikipediaPage containing all the sections. 
+        """
         if self.categories:
             LOGGER.warning("This WikipediaPage has already retrieved all of its categories at a previous time. Returning previously found categories to avoid unnecessary requests")
             return self.categories
@@ -202,6 +213,14 @@ class WikipediaPage:
         return self.categories
 
     def get_category_members(self, cmlimit = 20, cmprop = "", cmsort = "", cmdir = "", cmtype="", cmstarthexsortkey="", cmendhexsortkey="", cmstartsortkeyprefix="", cmendsortkeyprefix="", cmnamespace="") -> list:
+        """
+        It retrieves a certain amount (limited by cmlimit) of pages that belong to a specific category.
+        This WikipediaPage object must be a Category for the method to work. 
+        Full list of arguments can be found in the following link:
+        https://www.mediawiki.org/wiki/API:Categorymembers
+        @return [] if the current WikipediaPage object is not a Category, or a list of WikipediaPage objects of cmlimit length.
+        """
+        
         # https://www.mediawiki.org/wiki/API:Categorymembers
         # Check if this is a category (by finding the Category prefix)
         if self.args["title"].split(":")[0] != "Category":
@@ -240,12 +259,12 @@ class WikipediaPage:
         return categorymembers
 
     def get_all_pages(self, aplimit=10, apdir="", apcontinue="", apto="", apprefix="", apnamespace="", apfilterredir="", apminsize="", apmaxsize="", apprtype="", apprlevel="", apprfiltercascade="", apfilterlanglinks="", apprexpiry="") -> list:
-        # https://www.mediawiki.org/wiki/API:Allpages
-        # @info apfrom: str is unnecessary as a method argument since 
-        # it inherits the title from the current WikipediaPage title.
-        # This is important, because you want to first find() the page
-        # you're looking for to ensure that it exists and all methods
-        # return a WikipediaPage in one way or another. 
+        """
+        It retrieves a certain amount (limited by aplimit) of pages that can be found in the current page.
+        Full list of arguments can be found in the following link:
+        https://www.mediawiki.org/wiki/API:Allpages
+        @return a list of WikipediaPage objects of cmlimit length.
+        """
         title = self.args["title"]
         query_params = {
                 "action": "query",
@@ -287,10 +306,20 @@ class WikipediaPage:
         allpages = [ WikipediaPage(p) for p in req.json()["query"]["allpages"] ]
         return allpages
         
-    def get_all_imgs(self, directory="imgs\\") -> bool:
+    def get_all_imgs(self, directory="imgs\\") -> tuple(int, int):
+        """
+        Downloads using wget's package all images found in a webpage to the specified directory.
+        @returns integer tuple that contains the amount of images downloaded and the total amount of images encountered. 
+        Note that behaviour is non-blocking, meaning that encountering an error will not stop the method from attempting to download the rest of images found.
+        """
         
+        imgs_downloaded = 0
         if not os.path.isdir(directory):
             os.makedirs(directory)
+        if self.html == "":
+            req = requests.get(self.args["fullurl"])
+            LOGGER.info("Request URL: %s", req.url)
+            self.html = BeautifulSoup(req.content, 'html.parser')
         imgs = self.html.find_all('img')
         for img in tqdm(imgs):
             img_url = img.attrs.get("src")
@@ -300,6 +329,7 @@ class WikipediaPage:
                 LOGGER.info("Downloading image from %s into %s", img_url, directory)
                 try:
                     download(img_url, directory) # Download using wget
+                    imgs_downloaded += 1
                 except:
                     LOGGER.warning("Image with URL = < %s > could not be downloaded.", img_url)
                     continue
@@ -308,7 +338,7 @@ class WikipediaPage:
         files_found = [f for f in os.listdir() if f.endswith(".tmp")]
         for f in files_found:
             os.remove(f)
-        return True
+        return (imgs_downloaded, len(imgs))
 
 
 
@@ -324,7 +354,7 @@ class Enpyclopedia:
         self.pages = [] # List of all querried pages/sites for later access
         self.last_page_index = -1 # Index of the last page in the pages list, starts at -1 (no last page)
 
-    def find(self, to_find: str) -> None:
+    def find(self, to_find: str) -> bool:
         """
         Method that finds specific information on the appropriate online encyclopedia.
         It can be either a string containing the information to search for or link.
@@ -357,8 +387,10 @@ class Enpyclopedia:
                 "prop": "info|redirects",
                 "inprop": "url|talkid"
             }
-            resp = S.get(url=WIKI_API_URL, params=query_params).json()
-            for k, pg in resp["query"]["pages"].items():
+            req = S.get(url=WIKI_API_URL, params=query_params)
+            LOGGER.info("Request URL: %s", req.url)
+
+            for k, pg in req.json()["query"]["pages"].items():
                 if k != "-1":
                     page = WikipediaPage(page=pg)
                     self.pages.append(page)
