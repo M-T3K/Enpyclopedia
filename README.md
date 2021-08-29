@@ -16,9 +16,9 @@ The goal of this software is to provide as much functionality while keeping code
           - [Category Wikipedia Pages](#category-wikipedia-pages)
           - [Redirect Wikipedia Pages](#redirect-wikipedia-pages)
         - [WikipediaPage Methods](#wikipediapage-methods)
-      - [WikipediaSection Object](#wikipediasection-object)
+      - [WikipediaSection Dataclass](#wikipediasection-dataclass)
         - [WikipediaSection Members](#wikipediasection-members)
-        - [WikipediaSection Methods](#wikipediasection-methods)
+      - [Additional Functions](#additional-functions)
     - [Logging Additional Information](#logging-additional-information)
   - [Current Status](#current-status)
   - [Future Updates](#future-updates)
@@ -57,8 +57,8 @@ if page.args["title"] == same_page.args["title"]:
 
 Enpyclopedia contains two fundamental data structures:
 
-- [WikipediaPage](#wikipediapage-object)
-- [WikipediaSection](#wikipediasection-object)
+- [WikipediaPage](#wikipediapage-object) Class
+- [WikipediaSection](#wikipediasection-object) Dataclass
 
 #### WikipediaPage Object
 
@@ -137,12 +137,6 @@ The following methods are available in the WikipediaPage Object:
     - Return: 
         - List of Strings containing the links to the page's counterparts in other languages.
         - `[]` if this page is not available in other languages.
-- `get_full_text(type: str) -> str`: 
-    - Arguments: 
-        - String `type` that defaults to `text` and can be either `text` or `wikitext`. 
-    - Return: 
-        - String containing the entire text of the page.
-        - `""` if the argument `type` is incorrect.
 - `get_sections() -> WikipediaSection[]`: 
     - Return: 
         - List of WikipediaSection in which each element contains all the information regarding a section of the page. The length of the list is equal to the amount of sections in the page.
@@ -177,13 +171,13 @@ The following methods are available in the WikipediaPage Object:
         number_of_errors = total - downloads
         ```
 
-#### WikipediaSection Object
+#### WikipediaSection Dataclass
 
-A WikipediaSection object contains all the information regarding a Wikipedia page' sections.
+A WikipediaSection Dataclass contains all the data regarding a Wikipedia page' sections.
 
 ##### WikipediaSection Members
 
-All WikipediaSection objects will contain the following members that can be accessed like a normal field would be accessed:
+All WikipediaSection dataclasses will contain the following members that can be accessed like a normal field would be accessed:
 
 - `toclevel`
 - `level`
@@ -194,15 +188,16 @@ All WikipediaSection objects will contain the following members that can be acce
 - `byteoffset`
 - `anchor`
 
-##### WikipediaSection Methods
+#### Additional Functions
 
-The following method is available in the WikipediaSection Object:
+On top of the methods of the WikipediaPage class, the `get_wiki_text` function takes as part of its arguments an instance of a `WikipediaPage` or `WikipediaSection`, and acts accordingly:
 
-- `get_text(type: str) -> str`: 
+- `get_wiki_text(wiki_page_or_section: WikipediaPage or WikipediaSection, type: str) -> str`: 
     - Arguments: 
+        - Instance of `WikipediaPage` or `WikipediaSection` from which to find text.
         - String `type` that defaults to `text` and can be either `text` or `wikitext`. 
     - Return: 
-        - String containing the entire text of the section.
+        - String containing the entire text of the page.
         - `""` if the argument `type` is incorrect.
 
 ### Logging Additional Information
@@ -234,7 +229,6 @@ The following features are currently supported:
     - [X] Error logging & Logging of all inner queries
     - [X] Improve Readme file to cover all information
 
-
 ## Future Updates
 
 The following features may be supported in the future:
@@ -247,6 +241,5 @@ The following features may be supported in the future:
     - [ ] Get all cited sentences and their correct citation
     - [ ] Allow for batch operations
     - [ ] POST requests
-    - [ ] Get requirements.txt file
 - [Omniglot](https://omniglot.com/)
 - [Wolfram](https://www.wolframalpha.com/)

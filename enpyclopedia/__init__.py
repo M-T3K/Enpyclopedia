@@ -11,67 +11,41 @@ import requests
 from bs4 import BeautifulSoup
 from wget import download
 from tqdm import tqdm # This is for visual confirmation of the downloading of images
+from dataclasses import dataclass
 import os
 import urllib.parse
 
 LOGGER = logging.getLogger(__name__)
 WIKI_API_URL = "https://en.wikipedia.org/w/api.php"
 
+@dataclass
 class WikipediaSection:
+    toclevel: str
+    level: str    
+    line: str
+    number: str
+    index: str
+    fromtitle: str
+    byteoffset: str
+    anchor: str
 
-    def __init__(self, sect: dict) -> None:
-        self.toclevel = sect["toclevel"]
-        self.level = sect["level"]
-        self.line = sect["line"]
-        self.number = sect["number"]
-        self.index = sect["index"]
-        self.fromtitle = sect["fromtitle"]
-        self.byteoffset = sect["byteoffset"]
-        self.anchor = sect["anchor"]
-
-    def get_text(self, type="text") -> str:
-        """
-        Retrieves the full text of the section
-        @arg type: There are two possible types of queries. The default option is "text" and retrieves the html code, while the "wikitext" option retrieves it in a wiki format.
-        @return String
-        """
-        if type != "text" and type != "wikitext":
-            return ""
-        # https://www.mediawiki.org/w/api.php?action=parse&page=API:Parsing_wikitext&section=1&prop=text
-
-        query_params = {
-                "action": "parse",
-                "format": "json",
-                "page": self.fromtitle,
-                "prop": type,
-                "section": f"{self.index}"
-            }
-
-        req = requests.Session().get(url=WIKI_API_URL, params=query_params)
-        return req.json()["parse"][type]["*"]
-
-# @info I considered adding a new member called "Type" that reflects the type of the WikipediaPage:
-# For example, "Category", "Redirect", "Normal"
-# But I've reached the conclusion that it would be terrible: as of rn, the only way a WikipediaPage 
-# can be one of those things is if being accessed through another WikipediaPage's arguments, which
-# implies that you must know what you are accessing. It is important to know what type of data you
-# are accessing, even more so in dynamic languages like Python, so doing this would be a bad idea.
 class WikipediaPage:
 
     # https://www.mediawiki.org/wiki/API:Info
     def __init__(self, page: dict):
         
+        # Request Arguments
         self.args = page
         keys = page.keys()
 
-        # Special members
-        # @optimization Requests are much slower than a memory access so we keep track of the 
-        # requested html or sections. These may need to be accessed multiple times...
+        # Other
+        # @optimization Requests are much slower than a memory access so we keep track of 
+        # those things that could potentially need to be accessed multiple times
         self.html = ""
         self.sections = []
-        self.categories = [] # Categories are a type of page
+        self.categories = []
 
-        if "redirects" in keys:
+        if "redirects" in keys: # Not all pages will have redirects
             self.redirects = [ WikipediaPage(pg) for pg in self.args["redirects"]]
 
     def is_redirect(self) -> str:
@@ -138,25 +112,6 @@ class WikipediaPage:
                     final_links.append(f"https://{code}.wikipedia.org/wiki/{new_title}")
         return final_links
 
-    def get_full_text(self, type="text") -> str:
-        """
-        Retrieves the full text of the webpage.
-        @arg type: There are two possible types of queries. The default option is "text" and retrieves the html code, while the "wikitext" option retrieves it in a wiki format.
-        @return String
-        """
-        if type != "text" and type != "wikitext":
-            return ""
-        query_params = {
-                "action": "parse",
-                "format": "json",
-                "page": self.args["title"],
-                "prop": type
-            }
-
-        req = requests.Session().get(url=WIKI_API_URL, params=query_params)
-        LOGGER.info("Request URL: %s", req.url)
-        return req.json()["parse"][type]["*"]
-
     def get_sections(self) -> list:
         """
         Retrieves all the sections of the current page. If the sections were already previously found, it returns the previous ones.
@@ -179,7 +134,7 @@ class WikipediaPage:
         sects = req.json()["parse"]["sections"]
         self.sections = []
         for s in sects:
-            self.sections.append(WikipediaSection(s))
+            self.sections.append(WikipediaSection(toclevel=s["toclevel"], level=s["level"], line=s["line"], number=s["number"], index=s["index"], fromtitle=s["fromtitle"], anchor=s["anchor"], byteoffset=s["byteoffset"]))
         return self.sections
 
     def get_categories(self) -> list:
@@ -334,6 +289,36 @@ class WikipediaPage:
         return (imgs_downloaded, len(imgs))
 
 
+# Other Functions
+def get_wiki_text(wiki_page_or_section, type="text") -> str:
+        """
+        Retrieves the full text of the webpage.
+        @arg type: There are two possible types of queries. The default option is "text" and retrieves the html code, while the "wikitext" option retrieves it in a wiki format.
+        @return String
+        """
+
+        # "section": f"{self.index}"
+        if not (isinstance(wiki_page_or_section, WikipediaPage) or isinstance(wiki_page_or_section, WikipediaSection)):
+            LOGGER.error("get_text() called with an argument that was neither a WikipediaPage nor a WikipediaSection.")
+            return "" # If it's neither a page nor a section, abort
+        if type != "text" and type != "wikitext":
+            return ""
+        query_params = {
+                "action": "parse",
+                "format": "json",
+                "prop": type
+            }
+        
+        # https://www.mediawiki.org/w/api.php?action=parse&page=API:Parsing_wikitext&section=1&prop=text
+        if isinstance(wiki_page_or_section, WikipediaSection):
+            query_params["section"] = wiki_page_or_section.index
+            query_params["page"] = wiki_page_or_section.fromtitle
+        else:
+            query_params["page"] = wiki_page_or_section.args["title"]
+
+        req = requests.Session().get(url=WIKI_API_URL, params=query_params)
+        LOGGER.info("Request URL: %s", req.url)
+        return req.json()["parse"][type]["*"]
 
 class Enpyclopedia:
 

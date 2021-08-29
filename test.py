@@ -1,5 +1,5 @@
 
-from enpyclopedia import Enpyclopedia
+from enpyclopedia import Enpyclopedia, get_wiki_text
 import logging
 import json
 
@@ -16,14 +16,14 @@ print(wiki.args["title"])
 print(summary)
 
 langlinks = wiki.get_other_languages()
-txt = wiki.get_full_text() # Implicitly obtains in a "text" format
-wikitxt = wiki.get_full_text(type="wikitext")
+txt = get_wiki_text(wiki_page_or_section=wiki) # Implicitly imported function, "txt" type by default
+wikitxt = get_wiki_text(wiki_page_or_section=wiki, type="wikitext")
 
 sections = wiki.get_sections()
 print(sections)
 for s in sections:
-    print(s.get_text(type="text"))
-    print(s.get_text(type="wikitext"))
+    print(get_wiki_text(s, type="text"))
+    print(get_wiki_text(s, type="wikitext"))
 
 categories = wiki.get_categories()
 print(categories)
