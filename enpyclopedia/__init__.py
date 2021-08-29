@@ -11,7 +11,6 @@ import requests
 from bs4 import BeautifulSoup
 from wget import download
 from tqdm import tqdm # This is for visual confirmation of the downloading of images
-from dataclasses import dataclass
 import os
 import urllib.parse
 
