@@ -1,5 +1,6 @@
 # Enpyclopedia
 [![Documentation Status](https://readthedocs.org/projects/enpyclopedia/badge/?version=latest)](https://enpyclopedia.readthedocs.io/en/latest/?badge=latest)
+[![CodeFactor](https://www.codefactor.io/repository/github/m-t3k/enpyclopedia/badge/main)](https://www.codefactor.io/repository/github/m-t3k/enpyclopedia/overview/main)
 
 A Python API to use with online encyclopedias such as Wikipedia and Omniglot.
 The goal of this software is to provide as much functionality as possible while keeping code simple.

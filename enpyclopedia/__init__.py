@@ -117,22 +117,22 @@ def get_summary(wiki_page: WikipediaEntryPage) -> str:
             summary = pg["extract"].strip()
     return summary
 
-def get_wiki_text(wiki_data: Union[WikipediaEntryPage, WikipediaSection], type="text") -> str:
+def get_wiki_text(wiki_data: Union[WikipediaEntryPage, WikipediaSection], type_text="text") -> str:
     """
     Retrieves the full text of the WikipediaPage
-    @arg type: There are two possible types of queries. The default option is "text" and retrieves the html code, while the "wikitext" option retrieves it in a wiki format.
+    @arg type_text: There are two possible types of queries. The default option is "text" and retrieves the html code, while the "wikitext" option retrieves it in a wiki format.
     @return String
     """
-    if not (isinstance(wiki_data, WikipediaEntryPage) or isinstance(wiki_data, WikipediaSection)):
+    if not (isinstance(wiki_data, (WikipediaEntryPage, WikipediaSection)) ):
         LOGGER.error("get_wiki_text() called with an argument that was neither a WikipediaEntryPage nor a WikipediaSection.")
         return None # If it's neither a page nor a section, abort
-    if type != "text" and type != "wikitext":
-        LOGGER.error("get_wiki_text() called with argument type = '%s' but can only be 'text' or 'wikitext'.", type)
+    if type_text != "text" and type_text != "wikitext":
+        LOGGER.error("get_wiki_text() called with argument type_text = '%s' but can only be 'text' or 'wikitext'.", type)
         return None
     query_params = {
             "action": "parse",
             "format": "json",
-            "prop": type
+            "prop": type_text
         }
     
     # https://www.mediawiki.org/w/api.php?action=parse&page=API:Parsing_wikitext&section=1&prop=text
@@ -144,7 +144,7 @@ def get_wiki_text(wiki_data: Union[WikipediaEntryPage, WikipediaSection], type="
 
     req = requests.Session().get(url=WIKI_API_URL, params=query_params)
     LOGGER.info("Request URL: %s", req.url)
-    return req.json()["parse"][type]["*"]
+    return req.json()["parse"][type_text]["*"]
 
 def get_other_languages(wiki_page: WikipediaEntryPage) -> list:
     """
