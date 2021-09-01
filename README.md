@@ -1,6 +1,9 @@
 # Enpyclopedia
+[![Documentation Status](https://readthedocs.org/projects/enpyclopedia/badge/?version=latest)](https://enpyclopedia.readthedocs.io/en/latest/?badge=latest)
+
 A Python API to use with online encyclopedias such as Wikipedia and Omniglot.
 The goal of this software is to provide as much functionality as possible while keeping code simple.
+
 
 ## Table of Contents
 

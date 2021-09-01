@@ -10,7 +10,7 @@ import logging
 import requests
 from bs4 import BeautifulSoup
 from wget import download
-from tqdm import tqdm # This is for visual confirmation of the downloading of images
+from tqdm import tqdm # This is a progress bar for when images are being downloaded
 from dataclasses import dataclass
 import os
 import urllib.parse
