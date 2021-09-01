@@ -1,6 +1,6 @@
 # Enpyclopedia
 A Python API to use with online encyclopedias such as Wikipedia and Omniglot.
-The goal of this software is to provide as much functionality while keeping code simple.
+The goal of this software is to provide as much functionality as possible while keeping code simple.
 
 ## Table of Contents
 
@@ -24,13 +24,15 @@ The goal of this software is to provide as much functionality while keeping code
 
 ### Installation
 
-Currently the only way to install this is through cloning the git repo or downloading the file. You can do so with the following:
+You are going to need **Python 3.7** or above to use Enpyclopedia. If you don't know how to install it, you can check [the pyhon website](https://docs.python.org/3/using/index.html) for detailed information depending on your OS.
 
-`git clone https://github.com/M-T3K/Enpyclopedia.py`
+It's important to use an official copy of python, or otherwise pip may not be installed automatically. Pip is the package manager for python. More information is available [here](https://pip.pypa.io/en/stable/getting-started/).
 
-Once Enpyclopedia has several more features, including support for Omniglot, and is no longer in heavy and constant development, I will create a package distribution for pip.
+Since a pip package isn't available just yet, you can download Enpyclopedia by cloning the repository:
 
-Once the repo is cloned and the source is downloaded, and you are in place, you can install all the required dependencies with `pip install -r requirements.txt`. It's recommended to use a Virtual Environment for this.
+`git clone https://github.com/M-T3K/Enpyclopedia.git`
+
+You can then install all required dependencies with `pip install -r requirements.txt`. It's recommended that you create and use a Virtual Environment beforehand.
 
 ### Basic Usage
 
@@ -206,11 +208,11 @@ The following features are currently supported:
 
 The following features may be supported in the future:
 - General:
-    - [ ] Create a ReadTheDocs/Doxygen or whatever (Currently Working on this with Sphinx)
     - [ ] Add thorough testing
+    - [ ] Remove unnecessary dependencies on wget.download
 - [Wikipedia](https://www.wikipedia.org/)
     - [ ] Select Language of operation for Wikipedia
-    - [ ] Get all cited sentences and their correct citation
+    - [ ] Get all cited sentences and their corresponding citation. (That is all pieces of text with a number at the end, match it with the corresponding source cited at the end of the page).
     - [ ] Allow for batch operations
     - [ ] POST requests
 - [Omniglot](https://omniglot.com/)
